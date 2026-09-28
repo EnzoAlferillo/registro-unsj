@@ -3,14 +3,21 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Contracts\AnimalServiceInterface;
+use App\Http\Requests\AnimalDataRequest;
+
 class AnimalController extends Controller
 {
+    // Inyecta el servicio mediante el Service Container
+    public function __construct(
+        private AnimalServiceInterface $animalService
+    ) {}
     // Obtiene la lista de animales almacenada en la sesión, sino crea el arreglo vacío
-    public function index(Request $request)
+    public function index()
     {
-        $animales = $request->session()->get('animales', []);
-        // Envía la lista a la vista principal
-        return view('animales.index', compact('animales'));
+        return view('animales.index', [
+            'animales' => $this->animalService->all()
+        ]);
     }
     // Muestra el formulario para registrar un nuevo animal
     public function create()
@@ -18,58 +25,55 @@ class AnimalController extends Controller
         return view('animales.create');
     }
     // Guarda un nuevo animal en la sesión
-    public function store(Request $request)
+    public function store(AnimalDataRequest $request)
     {
-        // Obtiene la lista actual de animales
-        $animales = $request->session()->get('animales', []);
-        // Agrega un nuevo animal al arreglo
-        $animales[] = [
-            'nombre' => $request->nombre,
-            'especie' => $request->especie
-        ];
-    // Guarda nuevamente la lista en la sesión
-        $request->session()->put('animales', $animales);
-    // Regresa al listado principal
-        return redirect()->route('animales.index');
+        $this->animalService->create($request->validated());
+
+        return redirect()
+            ->route('animales.index')
+            ->with('success', 'Animal registrado correctamente.');
     }
     // Obtiene el animal seleccionado y envía sus datos al formulario de edición
-    public function edit(Request $request, $id)
+    public function edit(int|string $id)
     {
-        // Recupera la lista de animales de la sesión
-        $animales = $request->session()->get('animales', []);
-         // Envía el animal seleccionado y su identificador a la vista
-        return view('animales.edit', [
-            'animal' => $animales[$id],
-            'id' => $id
-        ]);
+        $animal = $this->animalService->find($id);
+
+        return view('animales.edit', compact('animal', 'id'));
     }
     // Actualiza los datos de un animal existente
-    public function update(Request $request, $id)
+    public function update(AnimalDataRequest $request, int|string $id)
     {
-         // Recupera la lista de animales
-        $animales = $request->session()->get('animales', []);
-        // Reemplaza la información del animal seleccionado
-        $animales[$id] = [
-            'nombre' => $request->nombre,
-            'especie' => $request->especie
-        ];
-        // Guarda los cambios en la sesión
-        $request->session()->put('animales', $animales);
-        // Regresa al listado principal
-        return redirect()->route('animales.index');
+        try {
+
+            $this->animalService->update($id, $request->validated());
+
+            return redirect()
+                ->route('animales.index')
+                ->with('success', 'Animal actualizado correctamente.');
+
+        } catch (\Exception $e) {
+
+            return redirect()
+                ->route('animales.index')
+                ->with('error', $e->getMessage());
+        }
     }
     // Elimina un animal de la sesión
-    public function destroy(Request $request, $id)
+    public function destroy(int|string $id)
     {
-        // Recupera la lista de animales
-        $animales = $request->session()->get('animales', []);
-        // Elimina el animal seleccionado
-        unset($animales[$id]);
-        // Reorganiza los índices del arreglo
-        $animales = array_values($animales);
-        // Guarda la lista actualizada
-        $request->session()->put('animales', $animales);
-        // Regresa al listado principal
-        return redirect()->route('animales.index');
+        try {
+
+            $this->animalService->delete($id);
+
+            return redirect()
+                ->route('animales.index')
+                ->with('success', 'Animal eliminado correctamente.');
+
+        } catch (\Exception $e) {
+
+            return redirect()
+                ->route('animales.index')
+                ->with('error', $e->getMessage());
+        }
     }
 }

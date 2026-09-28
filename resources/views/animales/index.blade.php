@@ -1,25 +1,38 @@
 @extends('layouts.app')
 
-@section('titulo', 'Animales')
+@section('titulo','Animales')
 
 @section('contenido')
 
-<a href="{{ route('animales.create') }}">Nuevo Animal</a>
+<a href="{{ route('animales.create') }}">
+    Nuevo Animal
+</a>
+
+<br><br>
 
 <ul>
+
 @foreach($animales as $animal)
 
-    <li>
+<li>
 
-        {{ $animal['nombre'] }}
+    <strong>{{ $animal['name'] }}</strong>
 
-        ({{ $animal['especie'] }})
+    <br>
 
-        <a href="{{ route('animales.edit', $loop->index) }}">
+    Especie: {{ $animal['species'] }}
+
+    <br>
+
+    Edad: {{ $animal['age'] }} años
+
+    <div class="acciones">
+
+        <a href="{{ route('animales.edit', $animal['id']) }}">
             Editar
         </a>
 
-        <form action="{{ route('animales.destroy', $loop->index) }}" method="POST">
+        <form action="{{ route('animales.destroy', $animal['id']) }}" method="POST">
 
             @csrf
             @method('DELETE')
@@ -30,9 +43,12 @@
 
         </form>
 
-    </li>
+    </div>
+
+</li>
 
 @endforeach
+
 </ul>
 
 @endsection
